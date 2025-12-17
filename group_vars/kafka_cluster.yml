@@ -1,0 +1,16 @@
+kafka_version: "3.9.1"
+kafka_scala_version: "2.13"
+kafka_base_dir: "/etc/kafka"
+kafka_logs_dir: "/var/log/kafka"
+
+kafka_port_broker: 9092
+kafka_port_controller: 9093
+
+# Build controller.quorum.voters string  "id@ip:port"
+kafka_quorum_voters: >-
+  {%- for h in groups['kafka_nodes'] -%}
+  {{ hostvars[h].kafka_node_id }}@{{ hostvars[h].ansible_host }}:{{ kafka_port_controller }}{% if not loop.last %},{% endif %}
+  {%- endfor %}
+
+kafka_first_node: "{{ groups['kafka_nodes'][0] }}"
+

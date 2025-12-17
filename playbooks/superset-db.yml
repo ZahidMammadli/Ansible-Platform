@@ -1,0 +1,9 @@
+---
+- name: Install & configure PostgreSQL 17 for superset
+  hosts: postgres
+  become: true
+  vars_files:
+    - ../group_vars/superset-db.yml
+  roles:
+    - roles/postgres
+

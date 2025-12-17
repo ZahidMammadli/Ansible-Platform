@@ -1,0 +1,17 @@
+---
+vault_user: "vault"
+vault_group: "vault"
+
+vault_data_dir: "/opt/vault/data"
+vault_config_dir: "/etc/vault.d"
+vault_log_dir: "/var/log/vault"
+
+vault_port: "8200"
+vault_cluster_port: "8201"
+
+# Will be built from ansible_host by default
+vault_api_addr: "http://{{ ansible_host | default('127.0.0.1') }}:{{ vault_port }}"
+vault_cluster_addr: "https://{{ ansible_host | default('127.0.0.1') }}:{{ vault_cluster_port }}"
+
+vault_cluster_name: "sesda4-vault"
+

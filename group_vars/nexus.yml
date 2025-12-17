@@ -1,0 +1,9 @@
+nexus_version: "3.87.0-03"        # example, adjust as needed
+nexus_download_url: "https://download.sonatype.com/nexus/3/nexus-{{ nexus_version }}-linux-x86_64.tar.gz"
+
+nexus_user: "nexus"
+nexus_group: "nexus"
+nexus_install_dir: "/opt"
+nexus_home: "/opt/nexus"
+nexus_data_dir: "/opt/sonatype-work"
+nexus_service_name: "nexus"

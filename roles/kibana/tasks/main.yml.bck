@@ -1,0 +1,44 @@
+---
+- name: Install Kibana
+  apt:
+    name: kibana
+    state: present
+    update_cache: yes
+
+- name: Ensure Kibana config directory exists
+  file:
+    path: /etc/kibana
+    state: directory
+    owner: root
+    group: kibana
+    mode: "0750"
+
+- name: Deploy kibana.yml
+  template:
+    src: kibana.yml.j2
+    dest: /etc/kibana/kibana.yml
+    owner: root
+    group: kibana
+    mode: "0640"
+  notify: restart kibana
+
+# Create keystore if not exists
+- name: Ensure Kibana keystore exists
+  become: yes
+  command: /usr/share/kibana/bin/kibana-keystore create
+  args:
+    creates: /etc/kibana/kibana.keystore
+
+# Store ES password securely in keystore
+- name: Set elasticsearch.password in Kibana keystore
+  become_user: kibana
+  shell: |
+    echo "{{ kibana_es_password }}" | /usr/share/kibana/bin/kibana-keystore add elasticsearch.password --stdin --force
+  no_log: true
+  notify: restart kibana
+
+- name: Enable and start Kibana
+  systemd:
+    name: kibana
+    enabled: yes
+    state: started

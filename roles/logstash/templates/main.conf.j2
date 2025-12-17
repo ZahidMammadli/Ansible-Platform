@@ -1,0 +1,25 @@
+input {
+  beats {
+    port => 5044
+  }
+}
+
+filter {
+  # place for grok/date/mutate if needed
+}
+
+output {
+  elasticsearch {
+    hosts => [
+{% for host in groups['es_nodes'] %}
+      "{{ es_http_scheme | default('http') }}://{{ hostvars[host].ansible_host }}:{{ es_http_port | default(9200) }}"{% if not loop.last %},{% endif %}
+{% endfor %}
+    ]
+    user     => "{{ logstash_es_username }}"
+    password => "{{ logstash_es_password }}"
+    index    => "logstash-%{+YYYY.MM.dd}"
+  }
+
+  stdout { codec => rubydebug }
+}
+

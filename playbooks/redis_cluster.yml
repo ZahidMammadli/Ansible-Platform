@@ -1,0 +1,9 @@
+---
+- name: Install & configure Redis Cluster (6 nodes, 3 masters + 3 replicas)
+  hosts: "{{ redis_cluster_group }}"
+  become: true
+  vars_files:
+    - ../group_vars/redis_cluster.yml
+  roles:
+    - roles/redis
+

@@ -1,0 +1,19 @@
+port {{ redis_port }}
+bind {{ redis_bind }}
+protected-mode yes
+
+cluster-enabled {{ 'yes' if redis_cluster_enabled else 'no' }}
+cluster-config-file nodes.conf
+cluster-node-timeout {{ redis_cluster_node_timeout }}
+
+appendonly yes
+dir {{ redis_data_dir }}
+
+requirepass {{ redis_password }}
+masterauth {{ redis_password }}
+
+# Optional if you have multiple interfaces:
+# cluster-announce-ip {{ ansible_host }}
+# cluster-announce-port {{ redis_port }}
+# cluster-announce-bus-port {{ redis_port | int + 10000 }}
+

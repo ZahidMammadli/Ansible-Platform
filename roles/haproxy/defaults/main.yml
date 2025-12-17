@@ -1,0 +1,11 @@
+# roles/haproxy_ha/defaults/main.yml
+haproxy_package_name: haproxy
+keepalived_package_name: keepalived
+
+haproxy_ha_vip: "10.10.44.73/24"
+haproxy_ha_interface: "ens3"
+
+# VRRP instance & router ID (can stay as default)
+haproxy_ha_vrrp_instance: "VI_1"
+haproxy_ha_virtual_router_id: 51
+

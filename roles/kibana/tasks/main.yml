@@ -1,0 +1,66 @@
+---
+
+- name: Install Kibana
+  apt:
+    name: kibana
+    state: present
+    update_cache: yes
+
+- name: Ensure Kibana config directory exists
+  file:
+    path: /etc/kibana
+    state: directory
+    owner: root
+    group: kibana
+    mode: "0750"
+
+- name: Deploy kibana.yml
+  template:
+    src: kibana.yml.j2
+    dest: /etc/kibana/kibana.yml
+    owner: root
+    group: kibana
+    mode: "0640"
+  notify: restart kibana
+
+- name: Enable and start Kibana
+  systemd:
+    name: kibana
+    enabled: yes
+    state: started
+
+# Force elasticsearch.password line to the password you entered at prompt
+- name: Ensure elasticsearch.password in kibana.yml matches prompted password
+  lineinfile:
+    path: /etc/kibana/kibana.yml
+    regexp: '^elasticsearch\.password:'
+    line: 'elasticsearch.password: "{{ kibana_system_password }}"'
+    insertafter: '^elasticsearch\.username:'
+  no_log: true
+  notify: restart kibana
+
+- name: Reset elastic & kibana_system passwords on Elasticsearch cluster
+  run_once: true
+  delegate_to: "{{ groups['es_nodes'][0] }}"
+  become: true
+  block:
+
+    - name: Reset elastic password interactively (no manual input)
+      ansible.builtin.expect:
+        command: "/usr/share/elasticsearch/bin/elasticsearch-reset-password --interactive --username elastic"
+        responses:
+          'Please confirm that you would like to continue.*': 'y'
+          'Enter password for \[elastic\].*': '{{ elastic_password }}'
+          'Re-enter password for \[elastic\].*': '{{ elastic_password }}'
+      no_log: true
+
+    - name: Reset kibana_system password interactively (no manual input)
+      ansible.builtin.expect:
+        command: "/usr/share/elasticsearch/bin/elasticsearch-reset-password --interactive --username kibana_system"
+        responses:
+          'Please confirm that you would like to continue.*': 'y'
+          'Enter password for \[kibana_system\].*': '{{ kibana_system_password }}'
+          'Re-enter password for \[kibana_system\].*': '{{ kibana_system_password }}'
+      no_log: true
+
+  notify: restart kibana   # restart after password reset

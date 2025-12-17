@@ -1,0 +1,10 @@
+server.host: "{{ kibana_server_host }}"
+server.port: {{ kibana_server_port }}
+
+elasticsearch.hosts:
+{% for host in groups['es_nodes'] %}
+  - "{{ es_http_scheme }}://{{ hostvars[host].ansible_host }}:{{ es_http_port }}"
+{% endfor %}
+
+elasticsearch.username: "{{ kibana_es_username }}"
+elasticsearch.password: "{{ kibana_es_password }}"

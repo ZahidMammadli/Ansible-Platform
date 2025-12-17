@@ -1,0 +1,82 @@
+- name: Ensure certs dir exists
+  become: yes
+  file:
+    path: /etc/elasticsearch/certs
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: "0750"
+
+# 1) Generate CA + node certs on the "cert master" only (as root)
+- name: Generate CA and node certs on cert master
+  when: inventory_hostname == es_cert_master
+  become: yes
+  block:
+    - name: Template instances.yml (all nodes)
+      template:
+        src: instances.yml.j2
+        dest: /usr/share/elasticsearch/instances.yml
+        mode: "0640"
+
+    - name: Generate CA (PEM) if not exists
+      command: >
+        /usr/share/elasticsearch/bin/elasticsearch-certutil ca
+        --silent
+        --pem
+        --out elastic-stack-ca.zip
+      args:
+        chdir: /usr/share/elasticsearch
+        creates: /usr/share/elasticsearch/elastic-stack-ca.zip
+
+    - name: Unzip CA zip into /etc/elasticsearch/certs/ca
+      unarchive:
+        src: /usr/share/elasticsearch/elastic-stack-ca.zip
+        dest: /etc/elasticsearch/certs
+        remote_src: yes
+
+    - name: Generate node certs for all instances (PEM)
+      command: >
+        /usr/share/elasticsearch/bin/elasticsearch-certutil cert
+        --silent
+        --in /usr/share/elasticsearch/instances.yml
+        --out certs.zip
+        --pem
+        --ca-cert /etc/elasticsearch/certs/ca/ca.crt
+        --ca-key  /etc/elasticsearch/certs/ca/ca.key
+      args:
+        chdir: /usr/share/elasticsearch
+        creates: /usr/share/elasticsearch/certs.zip
+
+    - name: Fetch certs.zip to control node
+      fetch:
+        src: /usr/share/elasticsearch/certs.zip
+        dest: "files/es_certs_{{ es_cluster_name }}.zip"
+        flat: yes
+
+  run_once: true
+  delegate_to: "{{ es_cert_master }}"
+
+# Ensure cert directory perms
+- name: Ensure certs directory permissions
+  file:
+    path: /etc/elasticsearch/certs
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: "0750"
+
+# Ensure cert files perms
+- name: Find cert files
+  find:
+    paths: /etc/elasticsearch/certs
+    file_type: file
+  register: es_cert_files
+
+- name: Set permissions on cert files
+  file:
+    path: "{{ item.path }}"
+    owner: elasticsearch
+    group: elasticsearch
+    mode: "0640"
+  loop: "{{ es_cert_files.files }}"
+  notify: restart elasticsearch

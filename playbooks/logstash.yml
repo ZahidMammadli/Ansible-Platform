@@ -1,0 +1,17 @@
+---
+- name: Install & configure Logstash for sesda4 Elasticsearch cluster
+  hosts: logstash
+  become: true
+
+  vars_prompt:
+    - name: logstash_es_username
+      prompt: "Enter Elasticsearch username for Logstash output (e.g. logstash_internal)"
+      private: no
+
+    - name: logstash_es_password
+      prompt: "Enter password for that Elasticsearch user"
+      private: yes
+
+  roles:
+    - roles/logstash
+

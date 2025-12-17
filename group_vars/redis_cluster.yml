@@ -1,0 +1,18 @@
+# group_vars/redis_cluster.yml
+
+redis_port: 6379
+redis_cluster_enabled: true
+redis_cluster_node_timeout: 5000
+redis_data_dir: /var/lib/redis
+redis_bind: "0.0.0.0"
+
+# IMPORTANT: set this with ansible-vault in real life
+redis_password: "W3PdrKmvsf"
+
+redis_service_name: "redis-server"
+
+# which group to use for cluster build
+redis_cluster_group: "redis_nodes"
+
+# delegate cluster creation to this host (optional, else we use first in group)
+redis_first_node: "redis01"

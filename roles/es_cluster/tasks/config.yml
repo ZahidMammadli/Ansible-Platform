@@ -1,0 +1,34 @@
+- name: Render elasticsearch.yml
+  template:
+    src: elasticsearch.yml.j2
+    dest: /etc/elasticsearch/elasticsearch.yml
+    owner: root
+    group: elasticsearch
+    mode: "0640"
+  notify: restart elasticsearch
+
+- name: Configure JVM heap
+  copy:
+    dest: /etc/elasticsearch/jvm.options.d/heap.options
+    content: |
+      -Xms{{ es_heap_size }}
+      -Xmx{{ es_heap_size }}
+  notify: restart elasticsearch
+
+- name: Enable and start Elasticsearch
+  systemd:
+    name: elasticsearch
+    enabled: true
+    state: started
+
+- name: Wait for HTTP to be up
+  uri:
+    url: "https://{{ ansible_host }}:{{ es_http_port }}"
+    validate_certs: no  # or point it to CA if you want validation here
+  register: es_http
+  retries: 10
+  delay: 5
+  until: es_http.status is defined and es_http.status in [200,401]
+  ignore_errors: yes
+  notify: restart elasticsearch
+

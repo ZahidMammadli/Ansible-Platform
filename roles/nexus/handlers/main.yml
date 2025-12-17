@@ -1,0 +1,8 @@
+---
+- name: restart nexus
+  become: yes
+  systemd:
+    name: "{{ nexus_service_name }}"
+    enabled: true
+    state: started
+

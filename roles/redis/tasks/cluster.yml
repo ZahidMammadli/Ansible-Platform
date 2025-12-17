@@ -1,0 +1,67 @@
+---
+# Decide which host will run the cluster create command
+- name: Pick Redis cluster first node
+  set_fact:
+    redis_cluster_creator: "{{ redis_first_node | default(groups[redis_cluster_group][0]) }}"
+  run_once: true
+  notify: restart redis
+
+- name: Restart redis-server
+  service:
+    name: redis-server
+    state: restarted
+
+# Make sure Redis is actually listening on all nodes before cluster create
+- name: Wait for Redis to be listening on all cluster nodes
+  become: yes
+  wait_for:
+    host: "{{ hostvars[item].ansible_host }}"
+    port: "{{ redis_port }}"
+    state: started
+    timeout: 60
+  loop: "{{ groups[redis_cluster_group] }}"
+  run_once: true
+  delegate_to: "{{ inventory_hostname }}"
+
+# Check whether cluster is already created
+- name: Check if Redis cluster already configured
+  become: yes
+  command: >
+    redis-cli -a {{ redis_password }}
+    -h {{ hostvars[redis_cluster_creator].ansible_host }}
+    -p {{ redis_port }}
+    cluster info
+  register: redis_cluster_info
+  changed_when: false
+  failed_when: false
+  run_once: true
+  delegate_to: "{{ redis_cluster_creator }}"
+
+# Create the cluster only if not already ok
+- name: Create Redis Cluster (3 masters + 3 replicas)
+  become: yes
+  shell: |
+    redis-cli -a "{{ redis_password }}" --cluster create \
+    {% for host in groups[redis_cluster_group] -%}
+      {{ hostvars[host].ansible_host }}:{{ redis_port }} \
+    {% endfor -%}
+    --cluster-replicas 1 --cluster-yes
+  args:
+    chdir: /tmp
+  run_once: true
+  delegate_to: "{{ redis_cluster_creator }}"
+  when: redis_cluster_info.stdout is not defined or
+        ('cluster_state:ok' not in redis_cluster_info.stdout)
+
+- name: Show Redis cluster nodes (debug)
+  become: yes
+  command: >
+    redis-cli -a {{ redis_password }}
+    -h {{ hostvars[redis_cluster_creator].ansible_host }}
+    -p {{ redis_port }}
+    cluster nodes
+  register: redis_cluster_nodes
+  changed_when: false
+  run_once: true
+  delegate_to: "{{ redis_cluster_creator }}"
+  notify: restart redis

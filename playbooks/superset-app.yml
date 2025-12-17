@@ -1,0 +1,10 @@
+# playbooks/superset.yml
+
+- name: Deploy Apache Superset via Docker Compose
+  hosts: superset
+  become: true
+  vars_files:
+    - "../group_vars/superset-app.yml"
+
+  roles:
+    - roles/superset

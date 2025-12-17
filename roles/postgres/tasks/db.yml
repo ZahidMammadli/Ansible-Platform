@@ -1,0 +1,42 @@
+---
+# 1) Create user if it does not exist
+- name: Ensure application user exists
+  become: yes
+  shell: >
+    sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='{{ postgres_app_user }}'"
+    | grep -q 1
+    || sudo -u postgres psql -c "CREATE USER {{ postgres_app_user }} WITH PASSWORD '{{ postgres_app_password }}';"
+  changed_when: false
+
+# 2) Create database owned by that user if it does not exist
+- name: Ensure application database exists
+  become: yes
+  shell: >
+    sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='{{ postgres_app_db }}'"
+    | grep -q 1
+    || sudo -u postgres psql -c "CREATE DATABASE {{ postgres_app_db }} OWNER {{ postgres_app_user }};"
+  changed_when: false
+
+# 3) Create schema if it does not exist
+- name: Ensure schema exists in database
+  become: yes
+  shell: >
+    sudo -u postgres psql -d {{ postgres_app_db }} -tAc "SELECT 1 FROM pg_namespace WHERE nspname='{{ postgres_app_schema }}'"
+    | grep -q 1
+    || sudo -u postgres psql -d {{ postgres_app_db }} -c "CREATE SCHEMA {{ postgres_app_schema }} AUTHORIZATION {{ postgres_app_user }};"
+  changed_when: false
+
+# 4) Set default search_path for user
+- name: Set default search_path for user
+  become: yes
+  shell: >
+    sudo -u postgres psql -c "ALTER USER {{ postgres_app_user }} SET search_path = {{ postgres_app_schema }};"
+  changed_when: false
+
+# 5) Grant privileges on database
+- name: Grant all privileges on DB to user
+  become: yes
+  shell: >
+    sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE {{ postgres_app_db }} TO {{ postgres_app_user }};"
+  changed_when: false
+

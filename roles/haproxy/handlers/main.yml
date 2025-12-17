@@ -1,0 +1,16 @@
+# roles/haproxy_ha/handlers/main.yml
+---
+- name: restart keepalived
+  become: yes
+  systemd:
+    name: keepalived
+    enabled: yes
+    state: restarted
+
+- name: restart haproxy
+  become: yes
+  systemd:
+    name: haproxy
+    enabled: yes
+    state: retarted
+

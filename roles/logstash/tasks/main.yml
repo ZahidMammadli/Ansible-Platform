@@ -1,0 +1,53 @@
+---
+- name: Install Logstash
+  become: yes
+  apt:
+    name: logstash
+    state: present
+    update_cache: yes
+
+- name: Ensure Logstash config directory exists
+  become: yes
+  file:
+    path: /etc/logstash
+    state: directory
+    owner: root
+    group: logstash
+    mode: "0750"
+
+- name: Ensure Logstash pipelines directory exists
+  become: yes
+  file:
+    path: /etc/logstash/conf.d
+    state: directory
+    owner: root
+    group: logstash
+    mode: "0750"
+
+- name: Deploy logstash.yml
+  become: yes
+  template:
+    src: logstash.yml.j2
+    dest: /etc/logstash/logstash.yml
+    owner: root
+    group: logstash
+    mode: "0640"
+  notify: restart logstash
+
+- name: Deploy main pipeline
+  become: yes
+  template:
+    src: main.conf.j2
+    dest: /etc/logstash/conf.d/main.conf
+    owner: root
+    group: logstash
+    mode: "0640"
+  notify: restart logstash
+
+- name: Enable and start Logstash
+  become: yes
+  systemd:
+    name: logstash
+    enabled: true
+    state: started
+

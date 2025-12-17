@@ -1,0 +1,32 @@
+# roles/superset/tasks/init.yml
+
+- name: Wait for superset container to be healthy
+  community.docker.docker_container_info:
+    name: superset
+  register: superset_container
+  retries: 30
+  delay: 5
+  until: superset_container is defined and superset_container.container.State.Status == "running"
+  ignore_errors: yes
+
+- name: Run superset db upgrade
+  community.docker.docker_container_exec:
+    container: superset-superset-1
+    command: superset db upgrade
+
+- name: Create admin user if not exists
+  community.docker.docker_container_exec:
+    container: superset-superset-1
+    command: >
+      superset fab create-admin
+      --username {{ superset_admin_username }}
+      --firstname {{ superset_admin_first_name }}
+      --lastname {{ superset_admin_last_name }}
+      --email {{ superset_admin_email }}
+      --password {{ superset_admin_password }}
+
+- name: Run superset init
+  community.docker.docker_container_exec:
+    container: superset-superset-1
+    command: superset init
+

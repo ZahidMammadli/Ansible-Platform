@@ -1,0 +1,99 @@
+- name: Apt update
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install Java (OpenJDK 21)
+  become: yes
+  apt:
+    name: openjdk-21-jdk
+    state: present
+
+- name: Remove initial server.properties file 
+  ansible.builtin.file:
+    path: "{{ kafka_base_dir }}/config/kraft/server.properties"
+    state: absent
+
+- name: Template server.properties
+  become: yes
+  template:
+    src: server.properties.j2
+    dest: "{{ kafka_base_dir }}/config/kraft/server.properties"
+    owner: kafka
+    group: kafka
+    mode: "0644"
+
+- name: Create logs directory
+  become: yes
+  file:
+    path: "{{ kafka_logs_dir }}"
+    state: directory
+    owner: kafka
+    group: kafka
+    mode: "0755"
+
+# 1) Generate cluster ID only once, on first node
+- name: Generate Kafka cluster ID on first node
+  become: yes
+  command: bin/kafka-storage.sh random-uuid
+  args:
+    chdir: "{{ kafka_base_dir }}"
+  register: kafka_cluster_id_cmd
+  run_once: true
+  delegate_to: "{{ kafka_first_node }}"
+
+- name: Set kafka_cluster_id fact for all nodes
+  set_fact:
+    kafka_cluster_id: "{{ kafka_cluster_id_cmd.stdout }}"
+
+# 2) Format storage on each node with SAME cluster ID
+- name: Clear previous kafka logs
+  become: yes
+  file:
+    path: "{{ kafka_logs_dir }}"
+    state: absent
+
+- name: Recreate log directory
+  become: yes
+  file:
+    path: "{{ kafka_logs_dir }}"
+    state: directory
+    owner: kafka
+    group: kafka
+    mode: "0755"
+
+- name: Format KRaft storage
+  become: yes
+  command: >
+    ./bin/kafka-storage.sh format
+    -t {{ kafka_cluster_id }}
+    -c config/kraft/server.properties
+  args:
+    chdir: "{{ kafka_base_dir }}"
+
+# 3) Systemd unit
+- name: Install kafka systemd service
+  become: yes
+  template:
+    src: kafka.service.j2
+    dest: /etc/systemd/system/kafka.service
+    mode: "0644"
+
+- name: Reload systemd
+  become: yes
+  systemd:
+    daemon_reload: yes
+
+- name: Enable and start kafka
+  become: yes
+  systemd:
+    name: kafka
+    enabled: true
+    state: started
+
+- name: Enable and start kafka
+  ansible.builtin.file:
+    path: /etc/kafka
+    owner: kafka
+    group: kafka
+    recurse: yes

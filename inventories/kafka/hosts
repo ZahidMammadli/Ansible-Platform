@@ -1,0 +1,8 @@
+[kafka_nodes]
+sesda4-kafka-01 ansible_host=10.10.44.31 kafka_node_id=1
+sesda4-kafka-02 ansible_host=10.10.44.32 kafka_node_id=2
+sesda4-kafka-03 ansible_host=10.10.44.33 kafka_node_id=3
+
+[sesda4:children]
+kafka_nodes
+

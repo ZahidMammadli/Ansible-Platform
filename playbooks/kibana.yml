@@ -1,0 +1,20 @@
+---
+
+- name: Install & configure Kibana for sesda4 Elasticsearch cluster
+  hosts: kibana
+  become: true
+  vars_files:
+    - ../group_vars/kibana.yml
+    # optional: reuse es_cluster vars if you want
+    # - ../group_vars/es_cluster.yml
+  vars_prompt:
+    - name: elastic_password
+      prompt: "Enter NEW password for [elastic] user"
+      private: yes
+
+    - name: kibana_system_password
+      prompt: "Enter NEW password for [kibana_system] user"
+      private: yes
+  
+  roles:
+    - roles/kibana

@@ -1,0 +1,15 @@
+es_cluster_name: "sesda4"
+es_repo_version: "8.x"
+es_heap_size: "1g"
+
+# choose first host as “cert master”
+es_cert_master: "{{ groups['es_nodes'][0] }}"
+es_http_port: 9200
+es_transport_port: 9300
+
+# discovery seeds built dynamically from inventory
+es_discovery_seeds: >
+  {{ groups['es_nodes']
+     | map('extract', hostvars, 'ansible_host')
+     | map('regex_replace', '$', ':9300')
+     | list }}

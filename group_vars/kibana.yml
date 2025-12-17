@@ -1,0 +1,14 @@
+# Where Kibana listens
+kibana_server_host: "0.0.0.0"
+kibana_server_port: 5601
+
+# How Kibana talks to Elasticsearch (HTTP for now)
+es_http_scheme: "http"
+es_http_port: 9200
+
+# Built-in service user for Kibana -> ES
+# Generate password on ES with:
+#   elasticsearch-reset-password -u kibana_system
+kibana_es_username: "kibana_system"
+kibana_es_password: "TYDGzk7zGE"
+

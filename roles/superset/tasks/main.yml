@@ -1,0 +1,28 @@
+# roles/superset/tasks/main.yml
+
+- name: Ensure Docker Engine and Compose are installed on Ubuntu
+  apt:
+    name:
+      - docker.io               # Docker Engine from Ubuntu repo
+      - docker-compose-v2   # Docker Compose v2 plugin
+      - python3-docker          # Python SDK for community.docker collection
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Ensure Docker service is running
+  service:
+    name: docker
+    state: started
+    enabled: true
+  become: true
+
+- name: Include tasks to deploy Docker Compose project
+  include_tasks: docker.yml
+
+- name: Initialize Superset (db upgrade, admin, init)
+  include_tasks: init.yml
+
+- name: Configure database connections via Superset API
+  include_tasks: api_databases.yml
+

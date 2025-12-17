@@ -1,0 +1,8 @@
+---
+- name: Run primary-side replication config
+  import_tasks: primary.yml
+  when: "'postgres_primary' in group_names"
+
+- name: Run standby-side replication config
+  import_tasks: standby.yml
+  when: "'postgres_standby' in group_names"

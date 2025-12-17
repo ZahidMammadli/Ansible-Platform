@@ -1,0 +1,185 @@
+---
+# 1. Install GitLab Runner package (Ubuntu/Debian)
+
+- name: Ensure curl is installed
+  become: yes
+  apt:
+    name: curl
+    state: present
+    update_cache: yes
+
+- name: Add GitLab Runner APT repository (Ubuntu/Debian)
+  become: yes
+  shell: |
+    curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh" | bash
+  args:
+    creates: /etc/apt/sources.list.d/runner_gitlab-runner.list
+
+- name: Update apt cache after adding GitLab Runner repo
+  become: yes
+  apt:
+    update_cache: yes
+
+- name: Install GitLab Runner package
+  become: yes
+  apt:
+    name: "{{ gitlab_runner_package_name }}"
+    state: present
+    update_cache: yes
+
+
+# 2. Ask user if runner should be registered now (interactive prompt)
+
+- name: Ask if GitLab Runner should be registered now
+  ansible.builtin.pause:
+    prompt: "Do you want to register the GitLab Runner now? (yes/no)"
+  register: gitlab_runner_register_prompt
+  when: gitlab_runner_register is not defined
+
+- name: Set gitlab_runner_register fact from answer
+  ansible.builtin.set_fact:
+    gitlab_runner_register: >-
+      {{
+        (gitlab_runner_register_prompt.user_input
+         | default('no')
+         | lower
+         | trim) in ['y', 'yes']
+      }}
+  when: gitlab_runner_register is not defined
+
+
+# 3. If answer is YES, collect registration parameters interactively
+
+- name: Prompt for GitLab URL
+  ansible.builtin.pause:
+    prompt: "GitLab URL (e.g. https://gitlab.example.com or https://gitlab.com)"
+  register: gitlab_runner_url_prompt
+  when: gitlab_runner_register | default(false) | bool
+
+- name: Prompt for runner token (glrt-...)
+  ansible.builtin.pause:
+    prompt: "Runner token (glrt-... from GitLab UI)"
+    echo: no
+  register: gitlab_runner_token_prompt
+  when: gitlab_runner_register | default(false) | bool
+
+- name: Prompt for runner description
+  ansible.builtin.pause:
+    prompt: "Runner description (e.g. ubuntu24-shell-runner)"
+  register: gitlab_runner_desc_prompt
+  when: gitlab_runner_register | default(false) | bool
+
+- name: Prompt for runner tags (comma separated)
+  ansible.builtin.pause:
+    prompt: "Runner tags (e.g. ubuntu,shell,prod) – leave empty for none"
+  register: gitlab_runner_tags_prompt
+  when: gitlab_runner_register | default(false) | bool
+
+- name: Prompt for executor type
+  ansible.builtin.pause:
+    prompt: "Executor type (shell/docker). Default: shell"
+  register: gitlab_runner_executor_prompt
+  when: gitlab_runner_register | default(false) | bool
+
+# IMPORTANT: set executor and other vars BEFORE we use them in any 'when' condition
+- name: Set registration variables from prompts
+  ansible.builtin.set_fact:
+    gitlab_runner_url: "{{ gitlab_runner_url_prompt.user_input }}"
+    gitlab_runner_token: "{{ gitlab_runner_token_prompt.user_input }}"
+    gitlab_runner_description: >-
+      {{ gitlab_runner_desc_prompt.user_input | default('ansible-runner') }}
+    gitlab_runner_tags: "{{ gitlab_runner_tags_prompt.user_input | default('') }}"
+    gitlab_runner_executor: >-
+      {{ gitlab_runner_executor_prompt.user_input | default('shell') | lower }}
+  when: gitlab_runner_register | default(false) | bool
+
+
+# 4. If executor == docker, install Docker and ask for default image
+
+- name: Install Docker engine for docker executor
+  become: yes
+  apt:
+    name: docker.io
+    state: present
+    update_cache: yes
+  when:
+    - gitlab_runner_register | default(false) | bool
+    - gitlab_runner_executor == 'docker'
+
+- name: Add gitlab-runner user to docker group
+  become: yes
+  user:
+    name: gitlab-runner
+    groups: docker
+    append: yes
+  when:
+    - gitlab_runner_register | default(false) | bool
+    - gitlab_runner_executor == 'docker'
+
+- name: Ensure Docker service is enabled and started
+  become: yes
+  systemd:
+    name: docker
+    enabled: yes
+    state: started
+  when:
+    - gitlab_runner_register | default(false) | bool
+    - gitlab_runner_executor == 'docker'
+
+- name: Prompt for default Docker image (only for docker executor)
+  ansible.builtin.pause:
+    prompt: "Default Docker image (e.g. alpine:latest). Leave empty for alpine:latest"
+  register: gitlab_runner_docker_image_prompt
+  when:
+    - gitlab_runner_register | default(false) | bool
+    - gitlab_runner_executor == 'docker'
+
+- name: Set docker image variable
+  ansible.builtin.set_fact:
+    gitlab_runner_docker_image: >-
+      {{ gitlab_runner_docker_image_prompt.user_input | default('alpine:latest') }}
+  when:
+    - gitlab_runner_register | default(false) | bool
+    - gitlab_runner_executor == 'docker'
+
+
+# 5. Register the runner (separate for docker and non-docker)
+
+- name: Register GitLab Runner (docker executor)
+  become: yes
+  command: >
+    gitlab-runner register
+    --non-interactive
+    --url "{{ gitlab_runner_url }}"
+    --token "{{ gitlab_runner_token }}"
+    --executor "docker"
+    --description "{{ gitlab_runner_description }}"
+    --docker-image "{{ gitlab_runner_docker_image }}"
+    --tag-list "{{ gitlab_runner_tags }}"
+  when:
+    - gitlab_runner_register | default(false) | bool
+    - gitlab_runner_executor == 'docker'
+
+- name: Register GitLab Runner (non-docker executor)
+  become: yes
+  command: >
+    gitlab-runner register
+    --non-interactive
+    --url "{{ gitlab_runner_url }}"
+    --token "{{ gitlab_runner_token }}"
+    --executor "{{ gitlab_runner_executor }}"
+    --description "{{ gitlab_runner_description }}"
+    --tag-list "{{ gitlab_runner_tags }}"
+  when:
+    - gitlab_runner_register | default(false) | bool
+    - gitlab_runner_executor != 'docker'
+
+
+# 6. Ensure gitlab-runner service is enabled and running
+
+- name: Ensure gitlab-runner service enabled and started
+  become: yes
+  systemd:
+    name: gitlab-runner
+    enabled: yes
+    state: started

@@ -1,0 +1,24 @@
+---
+# 1) Ensure replication user exists on PRIMARY
+- name: Ensure replication user exists on primary
+  become: yes
+  shell: >
+    sudo -u postgres psql -tAc
+    "SELECT 1 FROM pg_roles WHERE rolname='{{ postgres_replication_user }}'"
+    | grep -q 1
+    || sudo -u postgres psql -c
+    "CREATE ROLE {{ postgres_replication_user }} WITH REPLICATION LOGIN PASSWORD '{{ postgres_replication_password }}';"
+    #changed_when: false
+
+# Allow replication connections from ALL standby nodes in the group
+- name: Allow replication connections from standby nodes (pg_hba.conf)
+  become: yes
+  lineinfile:
+    path: "{{ postgresql_conf_dir }}/pg_hba.conf"
+    insertafter: EOF
+    line: "host    replication     {{ postgres_replication_user }}    {{ hostvars[item].ansible_host }}/32    scram-sha-256"
+  loop: "{{ groups['postgres_standby'] }}"
+  notify: restart postgres_primary
+
+# (we assume primary is already installed & running from your original postgres.yml + postgres role)
+

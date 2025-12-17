@@ -1,0 +1,8 @@
+# roles/postgres_standby/handlers/main.yml
+---
+- name:  restart postgres_primary
+  become: yes
+  systemd:
+    name: "{{ postgresql_service_name }}"
+    state: restarted
+

@@ -1,0 +1,29 @@
+# PostgreSQL base settings
+postgresql_version: 17
+postgresql_service_name: "postgresql@{{ postgresql_version }}-main"
+
+# PGDG repo key path
+postgresql_pgdg_key_path: /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+
+# Data + archive directories (as in your guide)
+postgresql_data_dir: /pgsql/data
+postgresql_archive_dir: /pgarch/archive
+postgresql_default_data_dir: "/var/lib/postgresql/{{ postgresql_version }}/main"
+postgresql_conf_dir: "/etc/postgresql/{{ postgresql_version }}/main"
+
+# Listen
+postgresql_listen_addresses: "*"
+
+# Archive config
+postgresql_archive_mode: "on"
+postgresql_archive_command: "test ! -f {{ postgresql_archive_dir }}/%f && cp %p {{ postgresql_archive_dir }}/%f"
+
+# Application DB/user (from your guide)
+postgres_app_user: "sesda"
+postgres_app_db: "sesda"
+postgres_app_schema: "sesda"
+
+postgres_app_password: "N33Egrr4uN7_"
+
+postgres_sys_pass: 'csXw-EeFGu8P!'
+postgres_db_pass: 'yyctDhEvuf7@!'

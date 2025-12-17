@@ -1,0 +1,86 @@
+---
+- name: Install base packages for HashiCorp repository (Ubuntu 24.04)
+  ansible.builtin.apt:
+    name:
+      - gnupg
+      - curl
+      - lsb-release
+      - ca-certificates
+      - unzip
+    state: present
+    update_cache: yes
+
+- name: Ensure /usr/share/keyrings exists
+  ansible.builtin.file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Add HashiCorp GPG key
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  args:
+    executable: /bin/bash
+    creates: /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+- name: Add HashiCorp APT repository for Ubuntu 24.04
+  ansible.builtin.shell: |
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" > /etc/apt/sources.list.d/hashicorp.list
+  args:
+    executable: /bin/bash
+
+- name: Update apt cache after adding HashiCorp repository
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Install Vault package
+  ansible.builtin.apt:
+    name: vault
+    state: present
+
+- name: Create Vault system user
+  ansible.builtin.user:
+    name: "{{ vault_user }}"
+    system: yes
+    shell: /usr/sbin/nologin
+    create_home: no
+
+- name: Create Vault directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    mode: '0750'
+  loop:
+    - "{{ vault_data_dir }}"
+    - "{{ vault_config_dir }}"
+    - "{{ vault_log_dir }}"
+
+- name: Deploy Vault configuration file
+  ansible.builtin.template:
+    src: vault.hcl.j2
+    dest: "{{ vault_config_dir }}/vault.hcl"
+    owner: root
+    group: "{{ vault_group }}"
+    mode: '0640'
+  notify: Restart Vault
+
+- name: Deploy Vault systemd unit
+  ansible.builtin.template:
+    src: vault.service.j2
+    dest: /etc/systemd/system/vault.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload systemd
+    - Restart Vault
+
+- name: Ensure Vault service is enabled and started
+  ansible.builtin.systemd:
+    name: vault
+    enabled: yes
+    state: started
+

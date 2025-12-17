@@ -1,0 +1,68 @@
+- name: Ensure base APT deps are installed
+  become: yes
+  apt:
+    name:
+      - wget
+      - gnupg
+      - ca-certificates
+      - apt-transport-https
+    state: present
+    update_cache: yes
+
+# 1) Remove any old/broken Elastic repo and key
+- name: Remove old Elasticsearch repo file if present
+  become: yes
+  file:
+    path: /etc/apt/sources.list.d/elastic-8.x.list
+    state: absent
+
+- name: Remove old Elasticsearch keyring if present
+  become: yes
+  file:
+    path: /usr/share/keyrings/elasticsearch-keyring.gpg
+    state: absent
+
+# 2) Recreate keyring exactly like you did manually
+- name: Install Elasticsearch GPG key via wget | gpg --dearmor
+  become: yes
+  shell: |
+    wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch \
+      | gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg
+
+# 3) Recreate APT repo
+- name: Add Elasticsearch APT repo
+  become: yes
+  copy:
+    dest: /etc/apt/sources.list.d/elastic-8.x.list
+    content: |
+      deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main
+    mode: "0644"
+
+# 4) Now apt update can safely see a valid key+repo
+- name: Update APT cache
+  become: yes
+  apt:
+    update_cache: yes
+
+# 5) Install Java (after repo issues are fixed)
+- name: Install Java (OpenJDK 21)
+  become: yes
+  apt:
+    name: openjdk-21-jdk
+    state: present
+
+# 6) Install Elasticsearch
+- name: Install Elasticsearch
+  become: yes
+  apt:
+    name: elasticsearch
+    state: present
+
+- name: Install archive tools (unzip)
+  become: yes
+  apt:
+    name:
+      - unzip
+    state: present
+    update_cache: yes
+

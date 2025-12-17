@@ -1,0 +1,17 @@
+postgresql_version: 17
+postgresql_service_name: "postgresql@{{ postgresql_version }}-main"
+postgres_port: 5432
+
+# Standby data/config paths (copy from your primary, but no archive config here)
+postgresql_data_dir: /pgsql/data
+postgresql_default_data_dir: "/var/lib/postgresql/{{ postgresql_version }}/main"
+postgresql_conf_dir: "/etc/postgresql/{{ postgresql_version }}/main"
+postgresql_listen_addresses: "*"
+
+# Primary connection info for replication
+postgres_primary_host: "10.10.44.41"
+
+# replication
+postgres_replication_user: "replica"
+postgres_replication_password: "replica"
+

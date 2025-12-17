@@ -1,0 +1,8 @@
+# roles/redis_cluster/handlers/main.yml
+---
+- name: restart redis
+  become: yes
+  systemd:
+    name: "{{ redis_service_name }}"
+    state: restarted
+

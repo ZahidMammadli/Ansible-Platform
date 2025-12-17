@@ -1,0 +1,39 @@
+---
+- name: Ensure prerequisites for PGDG repo
+  apt:
+    name:
+      - curl
+      - ca-certificates
+    state: present
+    update_cache: yes
+
+- name: Ensure PGDG key directory exists
+  file:
+    path: /usr/share/postgresql-common/pgdg
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Download PGDG repository key
+  get_url:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    dest: "{{ postgresql_pgdg_key_path }}"
+    mode: "0644"
+
+- name: Configure PGDG APT repository
+  copy:
+    dest: /etc/apt/sources.list.d/pgdg.list
+    mode: "0644"
+    content: |
+      deb [signed-by={{ postgresql_pgdg_key_path }}] https://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main
+
+- name: Update APT cache
+  apt:
+    update_cache: yes
+
+- name: Install PostgreSQL {{ postgresql_version }}
+  apt:
+    name: "postgresql-{{ postgresql_version }}"
+    state: present
+

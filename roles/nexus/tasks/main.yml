@@ -1,0 +1,103 @@
+---
+- name: Ensure nexus group exists
+  become: yes
+  group:
+    name: "{{ nexus_group }}"
+    state: present
+
+- name: Ensure nexus user exists
+  become: yes
+  user:
+    name: "{{ nexus_user }}"
+    group: "{{ nexus_group }}"
+    shell: /usr/sbin/nologin
+    create_home: no
+    system: yes
+
+- name: Ensure base install directory exists
+  become: yes
+  file:
+    path: "{{ nexus_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Download Nexus tarball
+  become: yes
+  get_url:
+    url: "{{ nexus_download_url }}"
+    dest: "/tmp/nexus-{{ nexus_version }}-unix.tar.gz"
+    mode: "0644"
+
+- name: Extract Nexus tarball
+  become: yes
+  unarchive:
+    src: "/tmp/nexus-{{ nexus_version }}-unix.tar.gz"
+    dest: "{{ nexus_install_dir }}"
+    remote_src: yes
+    creates: "{{ nexus_install_dir }}/nexus-{{ nexus_version }}"
+
+- name: Create symlink for nexus home
+  become: yes
+  file:
+    src: "{{ nexus_install_dir }}/nexus-{{ nexus_version }}"
+    dest: "{{ nexus_home }}"
+    state: link
+    force: yes
+
+- name: Ensure Nexus data directory exists
+  become: yes
+  file:
+    path: "{{ nexus_data_dir }}"
+    state: directory
+    owner: "{{ nexus_user }}"
+    group: "{{ nexus_group }}"
+    mode: "0755"
+
+- name: Set nexus.properties to use external data dir
+  become: yes
+  lineinfile:
+    path: "{{ nexus_home }}/etc/nexus.properties"
+    regexp: '^nexus\.data='
+    line: "nexus.data={{ nexus_data_dir }}"
+    create: yes
+  notify: restart nexus
+
+- name: Ensure bin/nexus.rc sets run_as_user
+  become: yes
+  lineinfile:
+    path: "{{ nexus_home }}/bin/nexus.rc"
+    regexp: '^run_as_user='
+    line: "run_as_user={{ nexus_user }}"
+    create: yes
+
+- name: Set ownership for Nexus home
+  become: yes
+  file:
+    path: "{{ nexus_home }}"
+    state: directory
+    recurse: yes
+    owner: "{{ nexus_user }}"
+    group: "{{ nexus_group }}"
+
+- name: Set ownership for Nexus data dir
+  become: yes
+  file:
+    path: "{{ nexus_data_dir }}"
+    state: directory
+    recurse: yes
+    owner: "{{ nexus_user }}"
+    group: "{{ nexus_group }}"
+
+- name: Install Nexus systemd service
+  become: yes
+  template:
+    src: nexus.service.j2
+    dest: /etc/systemd/system/{{ nexus_service_name }}.service
+    mode: "0644"
+
+- name: Reload systemd daemon
+  become: yes
+  systemd:
+    daemon_reload: yes

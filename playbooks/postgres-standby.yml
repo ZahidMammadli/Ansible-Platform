@@ -1,0 +1,18 @@
+---
+- name: Configure PostgreSQL primary for streaming replication
+  hosts: postgres_primary
+  become: true
+  vars_files:
+    - ../group_vars/postgres_primary.yml
+  roles:
+    # assumes you've already run your 'postgres' primary role before,
+    # but it's safe to include again to ensure config (optionally add postgres role here)
+    - roles/postgres_standby
+
+- name: Configure PostgreSQL standby server
+  hosts: postgres_standby
+  become: true
+  vars_files:
+    - ../group_vars/postgres_standby.yml
+  roles:
+    - roles/postgres_standby

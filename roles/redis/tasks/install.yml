@@ -1,0 +1,17 @@
+---
+- name: Install Redis server (Ubuntu 24)
+  become: yes
+  apt:
+    name: redis-server
+    state: present
+    update_cache: yes
+
+- name: Ensure Redis data directory exists
+  become: yes
+  file:
+    path: "{{ redis_data_dir }}"
+    state: directory
+    owner: redis
+    group: redis
+    mode: "0750"
+

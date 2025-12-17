@@ -1,0 +1,142 @@
+---
+# 0) Install PostgreSQL 17 from PGDG (standby)
+- name: Install prerequisites for PGDG repo on standby
+  become: yes
+  apt:
+    name:
+      - curl
+      - ca-certificates
+    state: present
+    update_cache: yes
+
+- name: Ensure PGDG key directory exists on standby
+  become: yes
+  file:
+    path: /usr/share/postgresql-common/pgdg
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Download PGDG repository key on standby
+  become: yes
+  get_url:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    dest: /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+    mode: "0644"
+
+- name: Configure PGDG APT repository on standby
+  become: yes
+  copy:
+    dest: /etc/apt/sources.list.d/pgdg.list
+    mode: "0644"
+    content: |
+      deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main
+
+- name: Update APT cache on standby
+  become: yes
+  apt:
+    update_cache: yes
+
+- name: Install PostgreSQL {{ postgresql_version }} on standby
+  become: yes
+  apt:
+    name: "postgresql-{{ postgresql_version }}"
+    state: present
+
+# 1) Check if standby is already initialized (re-run safety)
+- name: Check if standby already initialized
+  become: yes
+  stat:
+    path: "{{ postgresql_data_dir }}/standby.signal"
+  register: standby_signal
+
+# 2) Stop PostgreSQL service on standby before basebackup (first run only)
+- name: Stop PostgreSQL service on standby before basebackup
+  become: yes
+  systemd:
+    name: "{{ postgresql_service_name }}"
+    state: stopped
+  when: not standby_signal.stat.exists
+  failed_when: false
+  changed_when: false
+
+# 3) Prepare data directory
+- name: Ensure parent directory for data exists (standby)
+  become: yes
+  file:
+    path: "{{ postgresql_data_dir | dirname }}"
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: "0755"
+
+- name: Remove old data directory on standby
+  become: yes
+  file:
+    path: "{{ postgresql_data_dir }}"
+    state: absent
+  when: not standby_signal.stat.exists
+
+- name: Create empty data directory for standby
+  become: yes
+  file:
+    path: "{{ postgresql_data_dir }}"
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: "0700"
+  when: not standby_signal.stat.exists
+
+# 4) Run pg_basebackup to clone primary (first run only)
+- name: Run pg_basebackup from primary to standby
+  become: yes
+  shell: >
+    sudo -u postgres pg_basebackup
+    -D {{ postgresql_data_dir }}
+    -P
+    -R
+    -d "host={{ postgres_primary_host }} port={{ postgres_port }}
+        user={{ postgres_replication_user }}
+        password={{ postgres_replication_password }}"
+  when: not standby_signal.stat.exists
+
+# 5) Ensure data_directory & listen_addresses in postgresql.conf on standby
+- name: Set data_directory in postgresql.conf on standby
+  become: yes
+  lineinfile:
+    path: "{{ postgresql_conf_dir }}/postgresql.conf"
+    regexp: '^#?\s*data_directory\s*='
+    line: "data_directory = '{{ postgresql_data_dir }}'"
+
+- name: Set listen_addresses on standby
+  become: yes
+  lineinfile:
+    path: "{{ postgresql_conf_dir }}/postgresql.conf"
+    regexp: '^#?\s*listen_addresses\s*='
+    line: "listen_addresses = '{{ postgresql_listen_addresses }}'"
+
+# 6) Set primary_conninfo using your replication user
+- name: Set primary_conninfo on standby
+  become: yes
+  lineinfile:
+    path: "{{ postgresql_conf_dir }}/postgresql.conf"
+    regexp: '^#?\s*primary_conninfo\s*='
+    line: "primary_conninfo = 'host={{ postgres_primary_host }} port={{ postgres_port }} user={{ postgres_replication_user }} password={{ postgres_replication_password }}'"
+
+# 7) Allow external connections on standby (if needed)
+- name: Allow external connections on standby (pg_hba.conf)
+  become: yes
+  lineinfile:
+    path: "{{ postgresql_conf_dir }}/pg_hba.conf"
+    insertafter: EOF
+    line: "host    all             all             0.0.0.0/0            scram-sha-256"
+
+# 8) Start PostgreSQL standby
+- name: Ensure PostgreSQL standby service is enabled and started
+  become: yes
+  systemd:
+    name: "{{ postgresql_service_name }}"
+    enabled: true
+    state: started
+

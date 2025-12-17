@@ -1,0 +1,8 @@
+- name: Configure Kafka KRaft cluster (sesda4)
+  hosts: kafka_nodes
+  become: true
+  vars_files:
+    - ../group_vars/kafka_cluster.yml
+  roles:
+    - roles/kafka_cluster
+

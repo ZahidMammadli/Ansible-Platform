@@ -1,0 +1,14 @@
+[Unit]
+Description=Kafka Server
+After=network.target
+
+[Service]
+Type=simple
+User=kafka
+ExecStart=/bin/sh -c '{{ kafka_base_dir }}/bin/kafka-server-start.sh {{ kafka_base_dir }}/config/kraft/server.properties > {{ kafka_logs_dir }}/kafka.log 2>&1'
+ExecStop={{ kafka_base_dir }}/bin/kafka-server-stop.sh
+Restart=on-abnormal
+
+[Install]
+WantedBy=multi-user.target
+

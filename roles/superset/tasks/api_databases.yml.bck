@@ -1,0 +1,68 @@
+# roles/superset/tasks/api_databases.yml
+
+- name: Wait for Superset HTTP API to become available
+  uri:
+    url: "{{ superset_base_url }}/health"
+    method: GET
+    status_code: 200
+    validate_certs: false
+  register: superset_health
+  retries: 30
+  delay: 5
+  until: superset_health.status == 200
+
+- name: Login to Superset API and get access token
+  uri:
+    url: "{{ superset_base_url }}/api/v1/security/login"
+    method: POST
+    body_format: json
+    body:
+      username: "{{ superset_admin_username }}"
+      password: "{{ superset_admin_password }}"
+      provider: "db"
+      refresh: true
+    headers:
+      Content-Type: "application/json"
+    validate_certs: false
+  register: superset_login
+
+- name: Set access token fact
+  set_fact:
+    superset_access_token: "{{ superset_login.json.access_token }}"
+
+- name: Get CSRF token
+  uri:
+    url: "{{ superset_base_url }}/api/v1/security/csrf_token/"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ superset_access_token }}"
+    validate_certs: false
+  register: superset_csrf
+
+- name: Set CSRF token fact
+  set_fact:
+    superset_csrf_token: "{{ superset_csrf.json.result }}"
+
+- name: Create database connections via Superset API
+  uri:
+    url: "{{ superset_base_url }}/api/v1/database/"
+    method: POST
+    body_format: json
+    headers:
+      Authorization: "Bearer {{ superset_access_token }}"
+      X-CSRFToken: "{{ superset_csrf_token }}"
+      Content-Type: "application/json"
+    body:
+      engine: "{{ item.engine }}"
+      configuration_method: "{{ item.configuration_method }}"
+      database_name: "{{ item.name }}"
+      sqlalchemy_uri: "{{ item.sqlalchemy_uri }}"
+      extra: "{{ item.extra | default({}) }}"
+    status_code:
+      - 201   # created
+      - 409   # already exists (depending on version)
+      - 422   # validation error if it already exists
+    validate_certs: false
+  loop: "{{ superset_database_connections }}"
+  register: superset_db_create
+

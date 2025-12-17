@@ -1,0 +1,6 @@
+[postgres_primary]
+sesda-postgres-prod-01 ansible_host=10.10.44.41
+
+[postgres_standby]
+sesda-postgres-standby-01 ansible_host=10.10.44.42
+

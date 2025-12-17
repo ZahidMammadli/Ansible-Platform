@@ -1,0 +1,5 @@
+# Playbook to install (and optionally register) GitLab Runner on Ubuntu 24 hosts
+- hosts: gitrunner
+  become: yes
+  roles:
+    - roles/gitlab_runner

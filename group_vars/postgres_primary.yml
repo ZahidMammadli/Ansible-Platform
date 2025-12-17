@@ -1,0 +1,14 @@
+postgres_port: 5432
+
+postgresql_version: 17
+postgresql_service_name: "postgresql@{{ postgresql_version }}-main"
+postgresql_conf_dir: "/etc/postgresql/{{ postgresql_version }}/main"
+
+postgresql_archive_dir: /pgarch/archive
+postgresql_archive_mode: "on"
+postgresql_archive_command: "test ! -f {{ postgresql_archive_dir }}/%f && cp %p {{ postgresql_archive_dir }}/%f"
+
+# replication
+postgres_replication_user: "replica"
+postgres_replication_password: "replica"
+

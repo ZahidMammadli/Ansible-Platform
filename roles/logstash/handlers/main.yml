@@ -1,0 +1,7 @@
+---
+- name: restart logstash
+  become: yes
+  systemd:
+    name: logstash
+    state: restarted
+

@@ -1,0 +1,9 @@
+instances:
+{% for host in groups['es_nodes'] %}
+  - name: "{{ hostvars[host].es_node_name }}"
+    dns:
+      - "{{ hostvars[host].es_node_name }}"
+    ip:
+      - "{{ hostvars[host].ansible_host }}"
+{% endfor %}
+

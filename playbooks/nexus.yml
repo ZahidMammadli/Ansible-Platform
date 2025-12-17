@@ -1,0 +1,9 @@
+---
+- name: Install & configure Nexus Repository
+  hosts: nexus
+  become: true
+  vars_files:
+    - ../group_vars/nexus.yml
+  roles:
+    - roles/nexus
+

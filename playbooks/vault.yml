@@ -1,0 +1,9 @@
+---
+- name: Deploy HashiCorp Vault on SESDA4
+  hosts: vault
+  become: yes
+  gather_facts: yes
+
+  roles:
+    - roles/vault
+

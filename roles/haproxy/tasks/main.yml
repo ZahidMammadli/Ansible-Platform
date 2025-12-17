@@ -1,0 +1,60 @@
+---
+# 1. Install HAProxy and Keepalived packages
+
+- name: Install HAProxy
+  become: yes
+  apt:
+    name: "{{ haproxy_package_name }}"
+    state: present
+    update_cache: yes
+
+- name: Install Keepalived
+  become: yes
+  apt:
+    name: "{{ keepalived_package_name }}"
+    state: present
+    update_cache: yes
+
+
+# 2. Set HA role and priority based on host IP
+
+- name: Set HA role and priority for MASTER (10.10.44.71)
+  ansible.builtin.set_fact:
+    haproxy_ha_state: "MASTER"
+    haproxy_ha_priority: 150
+  when: ansible_host == "10.10.44.71"
+
+- name: Set HA role and priority for BACKUP (10.10.44.72)
+  ansible.builtin.set_fact:
+    haproxy_ha_state: "BACKUP"
+    haproxy_ha_priority: 100
+  when: ansible_host == "10.10.44.72"
+
+
+# 3. Deploy Keepalived configuration (same template, different state/priority per host)
+
+- name: Deploy Keepalived configuration
+  become: yes
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    mode: "0644"
+  notify: restart keepalived
+
+
+# 4. Ensure services are enabled and started
+
+- name: Ensure HAProxy service is enabled and started
+  become: yes
+  systemd:
+    name: haproxy
+    enabled: yes
+    state: started
+
+- name: Ensure Keepalived service is enabled and started
+  become: yes
+  systemd:
+    name: keepalived
+    enabled: yes
+    state: started
+

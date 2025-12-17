@@ -1,0 +1,22 @@
+# group_vars/superset.yml
+
+superset_project_dir: /opt/superset
+
+superset_admin_username: "admin"
+superset_admin_password: "admin"
+superset_admin_first_name: "Admin"
+superset_admin_last_name: "User"
+superset_admin_email: "admin@sinam.az"
+
+superset_http_port: 8088
+superset_base_url: "http://127.0.0.1:{{ superset_http_port }}"
+
+# DB connection that you normally add from UI
+# Will be created via Superset REST API /api/v1/database/
+superset_database_connections:
+  - name: "superset_postgres"
+    engine: "postgresql"
+    sqlalchemy_uri: "postgresql+psycopg2://superset:B9DY_X!F4oHw@10.10.44.112:5432/superset"
+    configuration_method: "sqlalchemy_form"
+    extra: {}
+

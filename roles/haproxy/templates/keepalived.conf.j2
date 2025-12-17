@@ -1,0 +1,25 @@
+# roles/haproxy_ha/templates/keepalived.conf.j2
+
+vrrp_script chk_haproxy {
+    script "/usr/bin/pgrep haproxy"
+    interval 2
+    fall 2
+    rise 2
+}
+
+vrrp_instance {{ haproxy_ha_vrrp_instance }} {
+    state {{ haproxy_ha_state }}
+    interface {{ haproxy_ha_interface }}
+    virtual_router_id {{ haproxy_ha_virtual_router_id }}
+    priority {{ haproxy_ha_priority }}
+    advert_int 1
+
+    virtual_ipaddress {
+        {{ haproxy_ha_vip }}
+    }
+
+    track_script {
+        chk_haproxy
+    }
+}
+
