@@ -91,6 +91,12 @@
     name: acl
     state: present
 
+- name: Enable and start PostgreSQL service
+  systemd:
+    name: "{{ postgresql_service_name }}"
+    enabled: yes
+    state: started
+
 - name: Change postgres database user password
   become: yes
   become_user: postgres
@@ -105,9 +111,4 @@
     name: postgres
     update_password: always
     password: "{{ postgres_sys_pass | password_hash('sha512') }}"    
-
-- name: Enable and start PostgreSQL service
-  systemd:
-    name: "{{ postgresql_service_name }}"
-    enabled: yes
-    state: started
+  notify: restart postgres
