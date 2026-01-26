@@ -1,5 +1,22 @@
 # roles/superset/tasks/docker.yml
 
+- name: Ensure Docker Engine and Compose are installed on Ubuntu
+  apt:
+    name:
+      - docker.io               # Docker Engine from Ubuntu repo
+      - docker-compose-v2   # Docker Compose v2 plugin
+      - python3-docker          # Python SDK for community.docker collection
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Ensure Docker service is running
+  service:
+    name: docker
+    state: started
+    enabled: true
+  become: true
+
 - name: Create Superset project directory
   file:
     path: "{{ superset_project_dir }}"
@@ -10,6 +27,12 @@
   copy:
     src: Dockerfile
     dest: "{{ superset_project_dir }}/Dockerfile"
+    mode: "0644"
+
+- name: Copy superset config
+  copy:
+    src: superset_config.py
+    dest: "{{ superset_project_dir }}/superset_config.py"
     mode: "0644"
 
 - name: Copy docker-compose.yml
