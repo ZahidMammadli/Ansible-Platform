@@ -1,0 +1,9 @@
+---
+- name: Install & configure PostgreSQL 17 for sesda
+  hosts: postgres_primary
+  become: true
+  vars_files:
+    - ../group_vars/postgres_alma10.yml
+  roles:
+    - roles/postgres_alma10
+

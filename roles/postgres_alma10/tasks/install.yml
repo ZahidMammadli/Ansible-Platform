@@ -1,0 +1,25 @@
+---
+- name: Install PGDG repo RPM for EL10
+  dnf:
+    name: "https://download.postgresql.org/pub/repos/yum/reporpms/EL-10-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
+    state: present
+    disable_gpg_check: yes
+
+- name: Disable GPG checks for PGDG repositories on EL10
+  replace:
+    path: /etc/yum.repos.d/pgdg-redhat-all.repo
+    regexp: '^gpgcheck=1$'
+    replace: 'gpgcheck=0'
+
+- name: Ensure prerequisites for PGDG repo
+  dnf:
+    name:
+      - python3-psycopg2
+      - policycoreutils-python-utils
+      - ca-certificates
+    state: present
+
+- name: Install PostgreSQL {{ postgresql_version }}
+  dnf:
+    name: "postgresql{{ postgresql_version }}-server"
+    state: present

@@ -1,0 +1,43 @@
+---
+- name: Ensure backup and archive directories exist
+  become: yes
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: "0750"
+  loop:
+    - /pgbackup
+    - /pgarch
+    - /pgarch/archive
+
+- name: Copy PostgreSQL backup script to /pgbackup/backup.sh
+  become: yes
+  copy:
+    src: backup.sh
+    dest: /pgbackup/backup.sh
+    owner: postgres
+    group: postgres
+    mode: "0750"
+  ignore_errors: yes
+
+- name: Cron weekly base backup 
+  become: yes
+  cron:
+    name: "PostgreSQL weekly base backup"
+    user: postgres
+    minute: "0"
+    hour: "0"
+    weekday: "6"
+    job: "#/pgbackup/backup.sh"
+
+- name: Cron daily archive cleanup
+  become: yes
+  cron:
+    name: "PostgreSQL archive cleanup (30d)"
+    user: postgres
+    minute: "5"
+    hour: "0"
+    job: "#/usr/bin/find /pgarch/archive -type f -mtime +30 -delete > /dev/null 2>&1"
+

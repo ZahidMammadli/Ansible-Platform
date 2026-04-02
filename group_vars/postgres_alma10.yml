@@ -1,0 +1,29 @@
+# PostgreSQL base settings
+postgresql_version: 17
+postgresql_service_name: "postgresql-{{ postgresql_version }}"
+
+# PGDG repo key path
+#postgresql_pgdg_key_path: /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+
+# Data + archive directories
+postgresql_data_dir: /pgsql/data
+postgresql_archive_dir: /pgarch/archive
+postgresql_default_data_dir: "/var/lib/pgsql/{{ postgresql_version }}/data"
+postgresql_conf_dir: "{{ postgresql_data_dir }}"
+
+# Listen
+postgresql_listen_addresses: "*"
+
+# Archive config
+postgresql_archive_mode: "on"
+postgresql_archive_command: "test ! -f {{ postgresql_archive_dir }}/%f && cp %p {{ postgresql_archive_dir }}/%f"
+
+# Application DB/user
+postgres_app_user: "eduator"
+postgres_app_db: "eduator_db"
+postgres_app_schema: "eduator"
+
+postgres_app_password: "bp3EGNUAWP"
+
+postgres_sys_pass: '8Xmj4jH8G4'
+postgres_db_pass: 'fjMKt3hNBG'

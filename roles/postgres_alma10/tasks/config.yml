@@ -1,0 +1,97 @@
+---
+- name: Ensure base directories exist for custom data & archive
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default('postgres') }}"
+    group: "{{ item.group | default('postgres') }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "{{ postgresql_data_dir | dirname }}", mode: "0755" }      # /pgsql
+    - { path: "{{ postgresql_data_dir }}", mode: "0700" }                 # /pgsql/data
+    - { path: "{{ postgresql_archive_dir | dirname }}", mode: "0755" }    # /pgarch
+    - { path: "{{ postgresql_archive_dir }}", mode: "0755" }              # /pgarch/archive
+
+- name: Create systemd override directory for PostgreSQL service
+  file:
+    path: "/etc/systemd/system/{{ postgresql_service_name }}.service.d"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Set PGDATA via systemd override
+  copy:
+    dest: "/etc/systemd/system/{{ postgresql_service_name }}.service.d/override.conf"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Service]
+      Environment=PGDATA={{ postgresql_data_dir }}
+  notify: daemon reload
+
+- name: Flush handlers so systemd sees new override
+  meta: flush_handlers
+
+- name: Check if data already moved
+  stat:
+    path: "{{ postgresql_data_dir }}/PG_VERSION"
+  register: pgdata_stat
+
+- name: Initialize PostgreSQL cluster in custom data dir
+  command: "/usr/pgsql-{{ postgresql_version }}/bin/initdb -D {{ postgresql_data_dir }}"
+  become: yes
+  become_user: postgres
+  when: not pgdata_stat.stat.exists
+
+- name: Set listen_addresses in postgresql.conf
+  lineinfile:
+    path: "{{ postgresql_conf_dir }}/postgresql.conf"
+    regexp: '^#?\s*listen_addresses\s*='
+    line: "listen_addresses = '{{ postgresql_listen_addresses }}'"
+  notify: restart postgres
+
+- name: Enable archive_mode in postgresql.conf
+  lineinfile:
+    path: "{{ postgresql_conf_dir }}/postgresql.conf"
+    regexp: '^#?\s*archive_mode\s*='
+    line: "archive_mode = {{ postgresql_archive_mode }}"
+  notify: restart postgres
+
+- name: Set archive_command in postgresql.conf
+  lineinfile:
+    path: "{{ postgresql_conf_dir }}/postgresql.conf"
+    regexp: '^#?\s*archive_command\s*='
+    line: "archive_command = '{{ postgresql_archive_command }}'"
+  notify: restart postgres
+
+# pg_hba.conf: allow remote connections (adjust CIDR as needed)
+- name: Allow remote access over TCP (pg_hba.conf)
+  lineinfile:
+    path: "{{ postgresql_conf_dir }}/pg_hba.conf"
+    insertafter: EOF
+    line: "host    all             all             0.0.0.0/0               scram-sha-256"
+  notify: restart postgres
+
+- name: Enable and start PostgreSQL service
+  systemd:
+    name: "{{ postgresql_service_name }}"
+    enabled: yes
+    state: started
+
+- name: Change postgres database user password
+  become: yes
+  become_user: postgres
+  community.postgresql.postgresql_user:
+    name: postgres
+    password: "{{ postgres_db_pass }}"
+    role_attr_flags: "SUPERUSER"
+    db: postgres
+
+- name: Change postgres system user password
+  user:
+    name: postgres
+    update_password: always
+    password: "{{ postgres_sys_pass | password_hash('sha512') }}"    
+  notify: restart postgres
