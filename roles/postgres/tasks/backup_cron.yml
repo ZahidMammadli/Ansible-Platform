@@ -20,8 +20,9 @@
     owner: postgres
     group: postgres
     mode: "0750"
+  ignore_errors: yes
 
-- name: Cron (postgres): weekly base backup (Sat 00:00)
+- name: Cron weekly base backup 
   become: yes
   cron:
     name: "PostgreSQL weekly base backup"
@@ -31,7 +32,7 @@
     weekday: "6"
     job: "#/pgbackup/backup.sh"
 
-- name: Cron (postgres): daily archive cleanup (00:05, delete >30d)
+- name: Cron daily archive cleanup
   become: yes
   cron:
     name: "PostgreSQL archive cleanup (30d)"
