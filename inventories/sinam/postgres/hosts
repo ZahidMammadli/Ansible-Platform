@@ -1,0 +1,6 @@
+[postgres_primary]
+postgres-prod-01 ansible_host=10.10.204.21 
+
+[postgres_standby]
+postgres-standby-01 ansible_host=10.10.44.42
+

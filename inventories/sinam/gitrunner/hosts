@@ -1,0 +1,5 @@
+[gitrunner]
+gitrunner01 ansible_host=10.10.44.101
+
+[sesda4:children]
+gitrunner

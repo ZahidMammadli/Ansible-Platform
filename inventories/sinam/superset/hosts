@@ -1,0 +1,5 @@
+[postgres]
+sesda-supersetdb-prod-01 ansible_host=172.16.208.147
+
+[superset]
+sesda-supersetapp-prod-01 ansible_host=172.16.208.146
