@@ -23,5 +23,7 @@ postgres_app_user: "superset"
 postgres_app_db: "superset"
 postgres_app_schema: "superset"
 
-postgres_app_password: "B9DY_X!F4oHw"
+postgres_app_password: "s_R!kW4U"
+postgres_db_pass: 's_R!kW4U'
+postgres_sys_pass: 'postgres'
 

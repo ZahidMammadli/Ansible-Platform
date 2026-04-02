@@ -19,11 +19,11 @@ postgresql_archive_mode: "on"
 postgresql_archive_command: "test ! -f {{ postgresql_archive_dir }}/%f && cp %p {{ postgresql_archive_dir }}/%f"
 
 # Application DB/user (from your guide)
-postgres_app_user: "sesda"
-postgres_app_db: "sesda"
-postgres_app_schema: "sesda"
+postgres_app_user: "naa"
+postgres_app_db: "naa_emsdb"
+postgres_app_schema: "archive"
 
-postgres_app_password: "N33Egrr4uN7_"
+postgres_app_password: "eHeadKwJZ8"
 
-postgres_sys_pass: 'csXw-EeFGu8P!'
-postgres_db_pass: 'yyctDhEvuf7@!'
+postgres_sys_pass: 'iW7k93eAsm'
+postgres_db_pass: 'vNz4ZMsAav'

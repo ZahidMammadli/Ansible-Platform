@@ -16,7 +16,7 @@ superset_base_url: "http://127.0.0.1:{{ superset_http_port }}"
 superset_database_connections:
   - name: "superset_postgres"
     engine: "postgresql"
-    sqlalchemy_uri: "postgresql+psycopg2://superset:B9DY_X!F4oHw@10.10.44.112:5432/superset"
+    sqlalchemy_uri: "postgresql+psycopg2://superset:s_R!kW4U@172.16.208.147:5432/superset"
     configuration_method: "sqlalchemy_form"
     extra: {}
 
