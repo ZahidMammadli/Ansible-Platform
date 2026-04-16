@@ -2,7 +2,7 @@
 
 - name: Wait for superset container to be healthy
   community.docker.docker_container_info:
-    name: superset
+    name: superset-superset-1
   register: superset_container
   retries: 30
   delay: 5

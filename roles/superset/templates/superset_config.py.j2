@@ -1,0 +1,18 @@
+FEATURE_FLAGS = {
+    "ENABLE_TEMPLATE_PROCESSING": True,
+    "ENABLE_EXPLORE_DRAG_AND_DROP": True,
+    "ALERT_REPORTS": True,
+    "DASHBOARD_CROSS_FILTERS": True,
+    "DASHBOARD_NATIVE_FILTERS": True,
+    "DASHBOARD_RBAC": True,
+    "ENABLE_ADVANCED_DATA_TYPE": True,
+    "ENABLE_SUPERSET_ANALYTICS": True,
+    "ENABLE_DATASOURCE_API": True,
+    "ENABLE_EXPLORER": True,
+    "ENABLE_REACT_CRUD_VIEWS": True,
+    "ENABLE_SQLLAB": True,
+    "ENABLE_SQLLAB_BACKEND_PERSISTENCE": True,
+}
+
+SECRET_KEY = "{{ superset_secret_key }}"
+SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://superset:{{ superset_db_password }}@postgres:5432/superset"
