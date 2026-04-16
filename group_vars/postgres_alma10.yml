@@ -1,5 +1,5 @@
 # PostgreSQL base settings
-postgresql_version: 17
+postgresql_version: 14
 postgresql_service_name: "postgresql-{{ postgresql_version }}"
 
 # PGDG repo key path
@@ -19,11 +19,11 @@ postgresql_archive_mode: "on"
 postgresql_archive_command: "test ! -f {{ postgresql_archive_dir }}/%f && cp %p {{ postgresql_archive_dir }}/%f"
 
 # Application DB/user
-postgres_app_user: "eduator"
-postgres_app_db: "eduator_db"
-postgres_app_schema: "eduator"
+postgres_app_user: "msxm"
+postgres_app_db: "msxm"
+postgres_app_schema: "msxm"
 
-postgres_app_password: "bp3EGNUAWP"
+postgres_app_password: "nc9BrHwkYUE"
 
-postgres_sys_pass: '8Xmj4jH8G4'
-postgres_db_pass: 'fjMKt3hNBG'
+postgres_sys_pass: 'P9heVhZjjpL'
+postgres_db_pass: 'U4dg_Je8'
