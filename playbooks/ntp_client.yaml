@@ -1,0 +1,52 @@
+---
+- name: Configure timezone and NTP servers
+  hosts: all
+  become: yes
+  tasks:
+    - name: Set timezone to Asia/Baku
+      timezone:
+        name: Asia/Baku
+   
+    - name: Remove pool addresses start with server
+      lineinfile:
+        path: /etc/chrony.conf
+        state: absent
+        regexp: "{{ item }}"
+      loop:
+          - '^server'
+          - '^pool'
+
+    - name: Remove pool addresses start with pool
+      lineinfile:
+        path: /etc/chrony/chrony.conf
+        state: absent
+        regexp: "{{ item }}"
+      loop:
+          - '^server'
+          - '^pool'
+
+    - name: Add NTP servers to Fedora based OS
+      blockinfile:
+        path: /etc/chrony.conf
+        block: |
+          server 10.34.60.81 iburst
+          server 10.34.60.82 iburst
+          server 10.34.60.83 iburst
+      when:  (ansible_facts['distribution'] == "CentOS") or
+             (ansible_facts['distribution'] == "RedHat") or
+             (ansible_facts['distribution'] == "AlmaLinux") or
+             (ansible_facts['distribution'] == "Oracle Linux")
+
+    - name: Add NTP servers to Ubuntu based OS
+      blockinfile:
+        path: /etc/chrony/chrony.conf
+        block: |
+          server 10.34.60.81 iburst
+          server 10.34.60.82 iburst
+          server 10.34.60.83 iburst
+      when:  ansible_facts['distribution'] == "Ubuntu" 
+    
+    - name: Restart chrony service
+      service:
+        name: chronyd
+        state: restarted

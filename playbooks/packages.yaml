@@ -1,0 +1,49 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: yes
+  tasks:
+      - name: Install only Fedora based
+        ansible.builtin.package:
+          name:
+              - bash-completion
+              - telnet
+              - bind-utils
+              - net-tools
+              - wget
+              - curl
+              - nc
+              - cloud-utils-growpart
+              - chrony
+              - vim
+              - freeipa-client
+              - oddjob-mkhomedir              
+          state: latest
+        when:  (ansible_facts['distribution'] == "CentOS") or
+               (ansible_facts['distribution'] == "RedHat") or
+               (ansible_facts['distribution'] == "AlmaLinux") or
+               (ansible_facts['distribution'] == "Oracle Linux")
+               
+      - name: Install only Ubuntu based
+        ansible.builtin.package:
+         name: 
+              - bash-completion
+              - telnet
+              - net-tools
+              - wget
+              - curl
+              - netcat-openbsd  
+              - cloud-utils
+              - dnsutils
+              - chrony
+              - vim 
+              - freeipa-client
+              - oddjob-mkhomedir
+         state: latest 
+        when: ansible_facts['distribution'] == "Ubuntu"
+
+      - name: Ensure chronyd service is started and enabled
+        service:
+          name: chronyd
+          state: started
+          enabled: yes  
