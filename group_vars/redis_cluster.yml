@@ -6,7 +6,7 @@ redis_cluster_node_timeout: 5000
 redis_data_dir: /var/lib/redis
 redis_bind: "0.0.0.0"
 
-redis_password: "4ACTAaJc@M@o"
+redis_password: "password"
 
 redis_service_name: "redis-server"
 
