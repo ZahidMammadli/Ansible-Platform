@@ -29,9 +29,9 @@
       blockinfile:
         path: /etc/chrony.conf
         block: |
-          server 10.34.60.81 iburst
-          server 10.34.60.82 iburst
-          server 10.34.60.83 iburst
+          server <ip_adress> iburst
+          server <ip_adress> iburst
+          server <ip_adress> iburst
       when:  (ansible_facts['distribution'] == "CentOS") or
              (ansible_facts['distribution'] == "RedHat") or
              (ansible_facts['distribution'] == "AlmaLinux") or
@@ -41,9 +41,9 @@
       blockinfile:
         path: /etc/chrony/chrony.conf
         block: |
-          server 10.34.60.81 iburst
-          server 10.34.60.82 iburst
-          server 10.34.60.83 iburst
+          server <ip_adress> iburst
+          server <ip_adress> iburst
+          server <ip_adress> iburst
       when:  ansible_facts['distribution'] == "Ubuntu" 
     
     - name: Restart chrony service
