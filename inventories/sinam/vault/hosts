@@ -1,7 +1,0 @@
-[vault]
-vault01 ansible_host=10.10.44.91
-
-[sesda4:children]
-vault
-
-

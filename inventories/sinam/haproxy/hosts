@@ -1,6 +1,0 @@
-[haproxy]
-haproxy01 ansible_host=10.10.44.71
-haproxy02 ansible_host=10.10.44.72
-
-[sesda4:children]
-haproxy
