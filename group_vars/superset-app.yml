@@ -20,5 +20,5 @@ superset_database_connections:
     configuration_method: "sqlalchemy_form"
     extra: {}
 
-superset_secret_key: "2zgkucKJEAZm6IJvXyk+I9378v5CYYIrMV5FHb6xjx9FbL/iQPIv1eQV"
-superset_db_password: "gA!b!3yCfCcQ"
+superset_secret_key: "Secure_secret_key"
+superset_db_password: "password"
