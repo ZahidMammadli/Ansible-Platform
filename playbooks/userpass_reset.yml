@@ -1,35 +1,36 @@
 ---
+#Using Vault would be more secure and proper way.
 - hosts: all
   become: yes
   gather_facts: no
 
   vars:
-    automationpass: 'g2whaLco'
-    rootpass: 'Hwz_Z8xT'
-    sesdaadmpass: '84W4VBzZZT'
+    user1pass: 'password'
+    user2pass: 'password'
+    user3pass: 'password'
 
   tasks:
-    - name: Ensure sesdaadm user exists
+    - name: Ensure user exists
       user:
-        name: sesdaadm
+        name: user
         state: present
         shell: /bin/bash
 
-    - name: Change automation password
+    - name: Change user1 password
       user:
-        name: automation
+        name: user1
         update_password: always
-        password: "{{ automationpass | password_hash('sha512') }}"
+        password: "{{ user1pass | password_hash('sha512') }}"
 
-    - name: Change root password
+    - name: Change user2pass password
       user:
-        name: root
+        name: user2
         update_password: always
-        password: "{{ rootpass | password_hash('sha512') }}"
+        password: "{{ user2pass | password_hash('sha512') }}"
 
-    - name: Change sesdaadm password
+    - name: Change user3 password
       user:
-        name: sesdaadm
+        name: user3
         update_password: always
-        password: "{{ sesdaadmpass | password_hash('sha512') }}"
+        password: "{{ user3pass | password_hash('sha512') }}"
 
