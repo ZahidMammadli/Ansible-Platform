@@ -10,4 +10,4 @@ es_http_port: 9200
 # Generate password on ES with:
 #   elasticsearch-reset-password -u kibana_system
 kibana_es_username: "kibana_system"
-kibana_es_password: "gA!b!3yCfCcQ"
+kibana_es_password: "password"
